@@ -6,5 +6,5 @@ opencv-python-headless
 Pillow
 torch
 torchvision
-ultralytics
+ultralytics-opencv-headless
 python-dotenv
