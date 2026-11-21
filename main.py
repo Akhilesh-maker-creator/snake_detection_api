@@ -12,6 +12,10 @@ from torch import nn
 from torchvision.models import convnext_tiny, ConvNeXt_Tiny_Weights
 from PIL import Image
 from ultralytics import YOLO
+import urllib.request
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -25,12 +29,33 @@ app.add_middleware(
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+SNAKE_MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "snake_model_convnext_tiny.pth"
+)
+
+SNAKE_MODEL_URL = os.getenv("SNAKE_MODEL_URL")
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 yolo_model = YOLO(
     os.path.join(BASE_DIR, "yolov8n.pt")
 ) 
 
+
+def download_file(url, destination):
+    if not os.path.exists(destination):
+        print(f"Downloading model: {destination}")
+        urllib.request.urlretrieve(url, destination)
+        print("Download complete.")
+    else:
+        print(f"Model already exists: {destination}")
+        
+        
+download_file(
+    SNAKE_MODEL_URL,
+    SNAKE_MODEL_PATH
+)
 
 num_classes = 5
 
@@ -43,7 +68,7 @@ model.classifier[2] = nn.Sequential(
 )
 
 checkpoint = torch.load(
-    os.path.join(BASE_DIR, "snake_model_convnext_tiny.pth"),
+    SNAKE_MODEL_PATH,
     map_location=device
 )
 model.load_state_dict(checkpoint["model_state_dict"])
@@ -63,8 +88,8 @@ class_map = {
     4: "Crotalus atrox - Western Diamondback rattlesnake"
 }
 
-
-
+   
+        
 def classify_image(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = Image.fromarray(img)
